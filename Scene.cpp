@@ -1,5 +1,3 @@
-// Scene.cpp
-
 #include "Scene.h"
 #include <glm/gtc/random.hpp>
 #include <glm/gtc/constants.hpp>
