@@ -1,80 +1,90 @@
+// Scene.cpp
+
 #include "Scene.h"
 #include <glm/gtc/random.hpp>
-#include <glm/gtc/constants.hpp>  // для glm::two_pi<float>()
+#include <glm/gtc/constants.hpp>
 #include <cmath>
-#include <vector>
 
 Scene::Scene(std::shared_ptr<Figure> fig, float radius)
     : boundary(std::move(fig)), particleRadius(radius) {}
+
+// ============================================================================
+// Обновление всех частиц: движение по dt, отражение от стен и упругие столкновения
+// ============================================================================
 void Scene::updateAll(float dt) {
-    // 1) Обновляем каждую частицу по dt и отражаем от границ:
+    size_t n = particles.size();
+    if (n < 2) {
+        // если меньше двух — просто движемся и отражаем от стен
+        for (auto& p : particles) {
+            p.update(dt);
+            boundary->reflect(
+                const_cast<glm::vec2&>(p.getPosition()),
+                const_cast<glm::vec2&>(p.getVelocity()),
+                p.getRadius()
+            );
+        }
+        return;
+    }
+
+    // 1) Обновляем по dt и отражаем от стен
     for (auto& p : particles) {
-        // обновление позиции
         p.update(dt);
-        // отражение от стенок квадрата
         boundary->reflect(
-            /* pos    */ const_cast<glm::vec2&>(p.getPosition()),
-            /* vel    */ const_cast<glm::vec2&>(p.getVelocity()),
-            /* radius */ p.getRadius()
+            const_cast<glm::vec2&>(p.getPosition()),
+            const_cast<glm::vec2&>(p.getVelocity()),
+            p.getRadius()
         );
     }
 
-    // 2) Обработка парных столкновений:
-    for (size_t i = 0; i < particles.size(); ++i) {
-        for (size_t j = i + 1; j < particles.size(); ++j) {
-            // позиции и вектор между ними
+    // 2) Обработка парных столкновений — отражение от касательной
+    for (size_t i = 0; i < n; ++i) {
+        for (size_t j = i + 1; j < n; ++j) {
+            // Получаем позиции и радиусы
             glm::vec2 pi = particles[i].getPosition();
             glm::vec2 pj = particles[j].getPosition();
-            glm::vec2 delta = pj - pi;
-
             float r1 = particles[i].getRadius();
             float r2 = particles[j].getRadius();
+            glm::vec2 delta = pj - pi;
+
             float minDist = r1 + r2;
-            float dist2   = glm::dot(delta, delta);
+            float dist2 = glm::dot(delta, delta);
+            if (dist2 >= minDist * minDist || dist2 == 0.0f) 
+                continue;  // нет пересечения
 
-            // проверка перекрытия
-            if (dist2 < minDist * minDist && dist2 > 0.0f) {
-                float distance = std::sqrt(dist2);
-                glm::vec2 normal = delta / distance;
+            float dist = std::sqrt(dist2);
+            glm::vec2 nrm = delta / dist;  // единичный вектор нормали
 
-                // относительная скорость
-                glm::vec2 vi = particles[i].getVelocity();
-                glm::vec2 vj = particles[j].getVelocity();
-                glm::vec2 relVel = vi - vj;
+            // отражаем скорости обоих от касательной
+            glm::vec2 v1 = particles[i].getVelocity();
+            glm::vec2 v2 = particles[j].getVelocity();
 
-                float velAlongNormal = glm::dot(relVel, normal);
-                if (velAlongNormal >= 0.0f)
-                    continue; // частицы уже расходятся
+            // зеркалим скорость: v' = v - 2*(v·n)*n
+            glm::vec2 v1r = v1 - 2.0f * glm::dot(v1, nrm) * nrm;
+            glm::vec2 v2r = v2 - 2.0f * glm::dot(v2, nrm) * nrm;
 
-                // рассчитываем упругий импульс
-                float m1 = particles[i].getMass();
-                float m2 = particles[j].getMass();
-                float jImpulse = -(2.0f * velAlongNormal) / (m1 + m2);
+            particles[i].setVelocity(v1r);
+            particles[j].setVelocity(v2r);
 
-                // обновляем скорости
-                particles[i].setVelocity(vi + (jImpulse * m2) * normal);
-                particles[j].setVelocity(vj - (jImpulse * m1) * normal);
-
-                // раздвигаем частицы, чтобы убрать перекрытие
-                float overlap = 0.5f * (minDist - distance);
-                glm::vec2 correction = normal * overlap;
-
-                particles[i].setPosition(pi - correction);
-                particles[j].setPosition(pj + correction);
-            }
+            // устраняем перекрытие — двигаем каждую на половину overlap
+            float overlap = 0.5f * (minDist - dist);
+            particles[i].setPosition(pi - overlap * nrm);
+            particles[j].setPosition(pj + overlap * nrm);
         }
     }
 }
 
+// ============================================================================
+// Добавление случайной частицы (радиус particleRadius)
+// ============================================================================
 void Scene::addParticleRandom() {
-    if (particles.size() >= 50) return;
+    if (particles.size() >= 100) return;
 
     glm::vec2 pos;
     bool valid = false;
     while (!valid) {
         pos = glm::linearRand(
-            glm::vec2(-24.5f, -24.5f),
-            glm::vec2( 24.5f,  24.5f)
+            glm::vec2(-25.0f + particleRadius, -25.0f + particleRadius),
+            glm::vec2( 25.0f - particleRadius,  25.0f - particleRadius)
         );
         valid = true;
         for (const auto& p : particles) {
@@ -89,14 +99,16 @@ void Scene::addParticleRandom() {
     }
 
     float angle = glm::linearRand(0.0f, glm::two_pi<float>());
-    glm::vec2 vel = 2.0f * glm::vec2(glm::cos(angle), glm::sin(angle));
+    glm::vec2 vel = 2.0f * glm::vec2(std::cos(angle), std::sin(angle));
 
-    float mass = 1.0f;
-    glm::vec3 color = glm::vec3(1.0f, 0.0f, 0.0f);
-
-    particles.emplace_back(pos, vel, particleRadius, mass, color);
+    particles.emplace_back(pos, vel, particleRadius, 1.0f, glm::vec3(1.0f, 1.0f, 0.0f));
 }
 
+
+// ============================================================================
+// Геттер списка частиц
+// ============================================================================
 const std::vector<Particle>& Scene::getParticles() const {
     return particles;
 }
+

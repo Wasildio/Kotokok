@@ -1,8 +1,10 @@
-// main.cpp
 #include "Controller.h"
+#include <cstdlib>
+#include <ctime>
 
 int main() {
-    Controller app(800, 800); // Размер окна 800x800
-    app.mainLoop();
-    return 0;
+std::srand(static_cast<unsigned>(std::time(nullptr)));
+Controller app(800, 800);
+app.mainLoop();
+return 0;
 }

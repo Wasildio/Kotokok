@@ -1,12 +1,18 @@
 // Controller.cpp
+
 #include "Controller.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "Square.h"
+#include "Scene.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/random.hpp>
+#include <glm/gtc/constants.hpp>
 #include <iostream>
 
 Controller::Controller(int width, int height)
-    : windowWidth(width), windowHeight(height), window(nullptr) {
+    : windowWidth(width), windowHeight(height), window(nullptr)
+{
     if (!initWindow()) {
         std::cerr << "Failed to initialize window" << std::endl;
         exit(EXIT_FAILURE);
@@ -14,15 +20,19 @@ Controller::Controller(int width, int height)
 
     glViewport(0, 0, windowWidth, windowHeight);
 
-    auto square = std::make_shared<Square>(-25.0f, 25.0f, -25.0f, 25.0f);
+    // Границы контейнера
+    constexpr float x_min = -25.0f, x_max = 25.0f;
+    constexpr float y_min = -25.0f, y_max = 25.0f;
+    auto square = std::make_shared<Square>(x_min, x_max, y_min, y_max);
     scene = std::make_shared<Scene>(square);
 
     renderer = std::make_unique<Renderer>();
 
-    // Изначально добавим несколько частиц
-    for (int i = 0; i < 50; ++i) {
+    // 1) Добавляем 10 случайных маленьких частиц
+    for (int i = 0; i < 100; ++i) {
         scene->addParticleRandom();
     }
+
 }
 
 Controller::~Controller() {
@@ -65,17 +75,27 @@ void Controller::processInput() {
 }
 
 void Controller::mainLoop() {
+    const int substeps = 15;                  // число физических подшагов
     float lastTime = static_cast<float>(glfwGetTime());
-
     while (!glfwWindowShouldClose(window)) {
+        // 1) Засекаем реальное время с прошлого кадра
         float currentTime = static_cast<float>(glfwGetTime());
-        float deltaTime = currentTime - lastTime;
+        float frameTime  = currentTime - lastTime;
         lastTime = currentTime;
 
+        // 2) Обрабатываем ввод один раз
         processInput();
-        scene->updateAll(deltaTime);
+
+        // 3) Делаем трёхкратную физику с дробным dt
+        float dt = frameTime / static_cast<float>(substeps);
+        for (int i = 0; i < substeps; ++i) {
+            scene->updateAll(dt);
+        }
+
+        // 4) Отрисовка один раз
         renderer->render(*scene);
 
+        // 5) Меняем буферы и опрашиваем события
         glfwSwapBuffers(window);
         glfwPollEvents();
     }

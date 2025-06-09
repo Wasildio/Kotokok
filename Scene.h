@@ -17,6 +17,11 @@ public:
 
     void updateAll(float dt);
     void addParticleRandom();
+    void addParticle(const glm::vec2& pos,
+                 const glm::vec2& vel,
+                 float mass,
+                 float radius,
+                 const glm::vec3& color);
 
     const std::vector<Particle>& getParticles() const;
 };
