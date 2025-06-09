@@ -1,5 +1,3 @@
-// Controller.cpp
-
 #include "Controller.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -20,7 +18,6 @@ Controller::Controller(int width, int height)
 
     glViewport(0, 0, windowWidth, windowHeight);
 
-    // Границы контейнера
     constexpr float x_min = -25.0f, x_max = 25.0f;
     constexpr float y_min = -25.0f, y_max = 25.0f;
     auto square = std::make_shared<Square>(x_min, x_max, y_min, y_max);
@@ -28,7 +25,6 @@ Controller::Controller(int width, int height)
 
     renderer = std::make_unique<Renderer>();
 
-    // 1) Добавляем 10 случайных маленьких частиц
     for (int i = 0; i < 100; ++i) {
         scene->addParticleRandom();
     }
@@ -75,27 +71,22 @@ void Controller::processInput() {
 }
 
 void Controller::mainLoop() {
-    const int substeps = 15;                  // число физических подшагов
+    const int substeps = 15;
     float lastTime = static_cast<float>(glfwGetTime());
     while (!glfwWindowShouldClose(window)) {
-        // 1) Засекаем реальное время с прошлого кадра
         float currentTime = static_cast<float>(glfwGetTime());
         float frameTime  = currentTime - lastTime;
         lastTime = currentTime;
 
-        // 2) Обрабатываем ввод один раз
         processInput();
 
-        // 3) Делаем трёхкратную физику с дробным dt
         float dt = frameTime / static_cast<float>(substeps);
         for (int i = 0; i < substeps; ++i) {
             scene->updateAll(dt);
         }
 
-        // 4) Отрисовка один раз
         renderer->render(*scene);
 
-        // 5) Меняем буферы и опрашиваем события
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
