@@ -4,14 +4,11 @@
 #include <iostream>
 
 Renderer::Renderer() {
-    // Инициализация шейдеров
     particleShader = compileShader("shaders/particle.vert", "shaders/particle.frag");
     squareShader = compileShader("shaders/square.vert", "shaders/square.frag");
 
-    // Ортографическая проекция: границы от -25 до 25 по x и y
     projection = glm::ortho(-25.0f, 25.0f, -25.0f, 25.0f, -1.0f, 1.0f);
 
-    // Создание модели частицы (круг)
     glGenVertexArrays(1, &particleVAO);
     glGenBuffers(1, &particleVBO);
 
@@ -39,7 +36,6 @@ Renderer::Renderer() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    // Создание модели квадрата
     glGenVertexArrays(1, &squareVAO);
     glGenBuffers(1, &squareVBO);
 
@@ -71,7 +67,6 @@ Renderer::~Renderer() {
 void Renderer::render(const Scene& scene) const {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Рисуем квадрат
     glUseProgram(squareShader);
 
     GLuint projLoc = glGetUniformLocation(squareShader, "projection");
@@ -81,7 +76,6 @@ void Renderer::render(const Scene& scene) const {
     glDrawArrays(GL_LINE_LOOP, 0, 4);
     glBindVertexArray(0);
 
-    // Рисуем частицы
     glUseProgram(particleShader);
 
     projLoc = glGetUniformLocation(particleShader, "projection");
@@ -99,7 +93,7 @@ void Renderer::render(const Scene& scene) const {
         GLuint colorLoc = glGetUniformLocation(particleShader, "color");
         glUniform3fv(colorLoc, 1, &particle.getColor()[0]);
 
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 38); // 36 сегментов + центр + замыкание
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 38);
     }
 
     glBindVertexArray(0);
