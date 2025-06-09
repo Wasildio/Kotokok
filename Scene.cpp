@@ -8,13 +8,9 @@
 Scene::Scene(std::shared_ptr<Figure> fig, float radius)
     : boundary(std::move(fig)), particleRadius(radius) {}
 
-// ============================================================================
-// Обновление всех частиц: движение по dt, отражение от стен и упругие столкновения
-// ============================================================================
 void Scene::updateAll(float dt) {
     size_t n = particles.size();
     if (n < 2) {
-        // если меньше двух — просто движемся и отражаем от стен
         for (auto& p : particles) {
             p.update(dt);
             boundary->reflect(
@@ -26,7 +22,6 @@ void Scene::updateAll(float dt) {
         return;
     }
 
-    // 1) Обновляем по dt и отражаем от стен
     for (auto& p : particles) {
         p.update(dt);
         boundary->reflect(
@@ -36,10 +31,8 @@ void Scene::updateAll(float dt) {
         );
     }
 
-    // 2) Обработка парных столкновений — отражение от касательной
     for (size_t i = 0; i < n; ++i) {
         for (size_t j = i + 1; j < n; ++j) {
-            // Получаем позиции и радиусы
             glm::vec2 pi = particles[i].getPosition();
             glm::vec2 pj = particles[j].getPosition();
             float r1 = particles[i].getRadius();
@@ -49,23 +42,20 @@ void Scene::updateAll(float dt) {
             float minDist = r1 + r2;
             float dist2 = glm::dot(delta, delta);
             if (dist2 >= minDist * minDist || dist2 == 0.0f) 
-                continue;  // нет пересечения
+                continue;
 
             float dist = std::sqrt(dist2);
-            glm::vec2 nrm = delta / dist;  // единичный вектор нормали
+            glm::vec2 nrm = delta / dist;
 
-            // отражаем скорости обоих от касательной
             glm::vec2 v1 = particles[i].getVelocity();
             glm::vec2 v2 = particles[j].getVelocity();
 
-            // зеркалим скорость: v' = v - 2*(v·n)*n
             glm::vec2 v1r = v1 - 2.0f * glm::dot(v1, nrm) * nrm;
             glm::vec2 v2r = v2 - 2.0f * glm::dot(v2, nrm) * nrm;
 
             particles[i].setVelocity(v1r);
             particles[j].setVelocity(v2r);
 
-            // устраняем перекрытие — двигаем каждую на половину overlap
             float overlap = 0.5f * (minDist - dist);
             particles[i].setPosition(pi - overlap * nrm);
             particles[j].setPosition(pj + overlap * nrm);
@@ -73,9 +63,6 @@ void Scene::updateAll(float dt) {
     }
 }
 
-// ============================================================================
-// Добавление случайной частицы (радиус particleRadius)
-// ============================================================================
 void Scene::addParticleRandom() {
     if (particles.size() >= 100) return;
 
@@ -105,9 +92,6 @@ void Scene::addParticleRandom() {
 }
 
 
-// ============================================================================
-// Геттер списка частиц
-// ============================================================================
 const std::vector<Particle>& Scene::getParticles() const {
     return particles;
 }
