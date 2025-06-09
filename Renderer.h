@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>  // Для glm::ortho
+#include <glm/gtc/matrix_transform.hpp> 
 #include "Scene.h"
 #include <string>
 
@@ -14,7 +14,7 @@ private:
     GLuint particleShader;
     GLuint squareShader;
 
-    glm::mat4 projection; // <--- Новое поле
+    glm::mat4 projection;
 
 public:
     Renderer();
