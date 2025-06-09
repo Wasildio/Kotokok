@@ -1,18 +1,14 @@
-// Square.cpp
-
 #include "Square.h"
-#include <algorithm>  // для std::clamp
+#include <algorithm>
 
 Square::Square(float x_min, float x_max, float y_min, float y_max)
     : x_min(x_min), x_max(x_max), y_min(y_min), y_max(y_max)
 {
-    // Прямое заполнение массива вершин
     vertices[0] = x_min; vertices[1] = y_min;
     vertices[2] = x_max; vertices[3] = y_min;
     vertices[4] = x_max; vertices[5] = y_max;
     vertices[6] = x_min; vertices[7] = y_max;
 
-    // Создание VAO/VBO
     glGenVertexArrays(1, &vao);
     glGenBuffers(1, &vbo);
 
@@ -45,7 +41,6 @@ void Square::reflect(glm::vec2& pos, glm::vec2& vel, float radius) const {
     bool hitX = (pos.x - radius < x_min) || (pos.x + radius > x_max);
     bool hitY = (pos.y - radius < y_min) || (pos.y + radius > y_max);
 
-    // Если одновременно и по X, и по Y — угол
     if (hitX && hitY) {
         pos.x = std::clamp(pos.x, x_min + radius, x_max - radius);
         pos.y = std::clamp(pos.y, y_min + radius, y_max - radius);
@@ -53,7 +48,6 @@ void Square::reflect(glm::vec2& pos, glm::vec2& vel, float radius) const {
         return;
     }
 
-    // Обычное отражение по X
     if (pos.x - radius < x_min) {
         pos.x = x_min + radius;
         vel.x = -vel.x;
@@ -62,7 +56,6 @@ void Square::reflect(glm::vec2& pos, glm::vec2& vel, float radius) const {
         vel.x = -vel.x;
     }
 
-    // Обычное отражение по Y
     if (pos.y - radius < y_min) {
         pos.y = y_min + radius;
         vel.y = -vel.y;
