@@ -13,17 +13,14 @@ private:
 public:
     Particle(const glm::vec2& pos, const glm::vec2& vel, float r, float m, const glm::vec3& c);
 
-    // Обновить позицию по скорости
     void update(float dt);
 
-    // Геттеры
     const glm::vec2& getPosition() const { return position; }
     const glm::vec2& getVelocity() const { return velocity; }
     float getRadius() const         { return radius;   }
     float getMass() const           { return mass;     }
     const glm::vec3& getColor() const { return color;   }
 
-    // Сеттеры (для отражения и столкновений)
     void setPosition(const glm::vec2& p) { position = p; }
     void setVelocity(const glm::vec2& v) { velocity = v; }
 };
