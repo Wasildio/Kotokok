@@ -9,7 +9,7 @@ private:
     float vertices[8];
     GLuint vao, vbo;
 
-    float x_min, x_max, y_min, y_max; // нужно сохранить для проверки попадания
+    float x_min, x_max, y_min, y_max;
 
 public:
     Square(float x_min, float x_max, float y_min, float y_max);
